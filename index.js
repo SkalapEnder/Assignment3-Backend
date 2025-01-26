@@ -4,7 +4,8 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const session = require('express-session');
 const authRouter = require('./routes/authRoutes');
-const taskRouter = require('./routes/taskRoutes');
+const newsRouter = require('./routes/newsRoutes');
+const buildRouter = require('./routes/buildRoutes');
 
 const app = express();
 const PORT = 3000;
@@ -15,6 +16,7 @@ mongoose.connect('mongodb+srv://skalap2endra:kGOM7z5V54vBFdp1@cluster0.vannl.mon
     .catch(err => console.log("Error during connect to MongoDB: ", err));
 
 app.set('view engine', 'ejs');
+app.set('views', './views');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
@@ -30,8 +32,13 @@ app.use(session({
 app.use((req, res, next) => {
     res.locals.isLoggedIn = req.session.isLoggedIn || false;
     res.locals.username = req.session.username || 'Guest';
+    res.locals.userId = req.session.userId;
     next();
 });
+
+app.use('/', authRouter);
+app.use('/', newsRouter);
+app.use('/', buildRouter);
 
 app.get('/', (req, res) => res.render('index'))
 
@@ -39,4 +46,23 @@ app.get('/', (req, res) => res.render('index'))
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+function convertData(timestamp) {
+    const date = new Date(Date.parse(timestamp));
+
+    const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    const day = date.getDate();
+    const month = date.toLocaleString('en-GB', { month: 'long' });
+    const year = date.getFullYear();
+
+    return `${time}, ${day} ${month}, ${year}`;
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+app.locals.convertData = convertData;
+app.locals.capitalizeFirstLetter = capitalizeFirstLetter;
 

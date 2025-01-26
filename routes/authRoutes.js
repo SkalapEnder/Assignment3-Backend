@@ -1,7 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const Task = require('../models/Task');
 const mongoose = require("mongoose");
 const router = express.Router();
 const adminCode = 'admin1243'
@@ -11,18 +9,18 @@ mongoose.connect('mongodb+srv://skalap2endra:kGOM7z5V54vBFdp1@cluster0.vannl.mon
     .catch((err) => console.error('Error connecting to MongoDB Atlas:', err));
 
 // REGISTER
-router.get('/register', (req, res) => res.render('registration', {role: 'user'}));
+router.get('/register', (req, res) => res.render('auth/registration', {role: 'user'}));
 
 router.post('/register', async (req, res) => {
     const { username, email, password, role, secretCode } = req.body;
 
     const existingUser = await User.findOne({ username: username });
     if (existingUser !== null) {
-        return res.render('error', { errorMessage: 'User already exists' });
+        return res.render('templates/error', { errorMessage: 'User already exists' });
     }
 
     if (role === 'admin' && secretCode !== adminCode) {
-        return res.render('error', { errorMessage: 'Invalid secret code' });
+        return res.render('templates/error', { errorMessage: 'Invalid secret code' });
     }
 
     // Find new free ID from collection (starts from 0)
@@ -47,12 +45,47 @@ router.post('/register', async (req, res) => {
     res.redirect('/login');
 });
 
+router.post('/register', async (req, res) => {
+    const { username, email, password, role, secretCode } = req.body;
+
+    const existingUser = await User.findOne({ username: username });
+    if (existingUser !== null) {
+        return res.render('templates/error', { errorMessage: 'User already exists' });
+    }
+
+    if (role === 'admin' && secretCode !== adminCode) {
+        return res.render('templates/error', { errorMessage: 'Invalid secret code' });
+    }
+
+    // Find new free ID from collection (starts from 0)
+    const userId = await getNextFreeUserId();
+    if (isNaN(userId)) {
+        throw new Error('Failed to generate a valid user_id');
+    }
+
+    // const hashedPassword = await bcrypt.hash(password, 11);
+
+    const newUser = new User({
+        user_id: userId,
+        username: username,
+        email: email,
+        password: password,
+        role: role,
+        created_at: new Date(),
+        updated_at: new Date(),
+    });
+
+    await newUser.save();
+    res.redirect('/admin');
+});
+
+
 // LOGIN
 router.get('/login', (req, res) => {
     if (req.session.userId !== undefined) {
         return res.redirect('/todo');
     }
-    res.render('login');
+    res.render('auth/login');
 });
 
 router.post('/login', async (req, res) => {
@@ -60,10 +93,10 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ username: username });
 
     if (user === null) {
-        return res.render('error', {errorMessage: 'User not found'});
+        return res.render('templates/error', {errorMessage: 'User not found'});
     }
     if (password !== user.password){
-        return res.render('error', {errorMessage: 'Invalid password'});
+        return res.render('templates/error', {errorMessage: 'Invalid password'});
     }
 
     req.session.userId = user.user_id;
@@ -80,9 +113,9 @@ router.get('/update', async (req, res) => {
 
     const user = await getUser(req.session.userId);
     if (user === null) {
-        return res.render('error', {errorMessage: 'User not found'});
+        return res.render('templates/error', {errorMessage: 'User not found'});
     }
-    res.render('update', {user});
+    res.render('profile/update', {user});
 })
 
 router.post('/update', async (req, res) => {
@@ -93,7 +126,7 @@ router.post('/update', async (req, res) => {
     const { username, email, role, secret_code } = req.body;
 
     if (role === 'admin' && secret_code === null) {
-        return res.render('error', {errorMessage: 'Secret code is required for admins'});
+        return res.render('templates/error', {errorMessage: 'Secret code is required for admins'});
     }
 
     try {
@@ -103,7 +136,7 @@ router.post('/update', async (req, res) => {
             role: role };
         if (role === 'admin') {
             if (secret_code !== adminCode) {
-                return res.render('error', {errorMessage: 'Invalid secret code'});
+                return res.render('templates/error', {errorMessage: 'Invalid secret code'});
             }
         }
 
@@ -113,7 +146,7 @@ router.post('/update', async (req, res) => {
             {$set: updateData}
         );
         if (updatedUser === null) {
-            return res.render('error', {errorMessage: 'Error updating user'});
+            return res.render('templates/error', {errorMessage: 'Error updating user'});
         }
         req.session.username = username;
         res.redirect('/profile');
@@ -123,11 +156,21 @@ router.post('/update', async (req, res) => {
     }
 });
 
+// ADMIN part
+router.get('/admin', async (req, res) => {
+    if (req.session.userId === undefined) {
+        return res.redirect('/login');
+    }
+
+    const users = await User.find({});
+    res.render('profile/admin', {users});
+})
+
 // LOG OUT part
 router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            res.render('error', {errorMessage: 'Error logging out'});
+            res.render('templates/error', {errorMessage: 'Error logging out'});
         }
         res.redirect('/');
     });
@@ -141,21 +184,15 @@ router.post('/delete-account', async (req, res) => {
     const userId = req.session.userId;
 
     try {
-        const response = await Task.deleteMany({ user_id: userId });
-
-        if (response === null) {
-            console.error(`Failed to delete tasks.`);
-        }
-
         const deletedUser = await User.findOneAndDelete({ user_id: userId });
         if (deletedUser === null) {
-            return res.render('error', {errorMessage: 'User not found or not deleted'});
+            return res.render('templates/error', {errorMessage: 'User not found or not deleted'});
         }
 
         req.session.destroy();
         res.redirect('/');
     } catch (err) {
-        return res.render('error', {errorMessage: err});
+        return res.render('templates/error', {errorMessage: err});
     }
 });
 
@@ -166,9 +203,9 @@ router.get('/profile', async (req, res) => {
 
     const user = await getUser(req.session.userId);
     if (user === null) {
-        return res.render('error', {errorMessage: 'User not found'});
+        return res.render('templates/error', {errorMessage: 'User not found'});
     }
-    return res.render('profile', {user});
+    return res.render('profile/profile', {user});
 })
 
 async function getUser(id){

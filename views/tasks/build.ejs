@@ -9,10 +9,15 @@
         .search-container {
             margin-bottom: 20px;
         }
+        body{
+            background-color: #dbdbdb;
+        }
+
     </style>
 </head>
 <body>
-<div class="container py-5">
+<%- include('../templates/navbar'); %>
+<div class="container bg-white shadow rounded w-50 mt-4 p-5 pb-4">
     <h1 class="text-center mb-4">PC Builder</h1>
 
     <div class="search-container">
@@ -42,7 +47,7 @@
         </div>
     </div>
 </div>
-
+<%- include('../templates/footer'); %>
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const cpuSelect = document.getElementById('cpu-select');
