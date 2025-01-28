@@ -13,17 +13,17 @@
     </style>
 </head>
 <body>
-<%- include('templates/navbar'); %>
+<%- include('./templates/navbar'); %>
 
 <main class="container-fluid text-center mt-4 p-5 w-50 shadow bg-white rounded">
     <h1>Welcome to Your Dashboard!</h1>
     <p class="fs-4">Welcome to your personalized dashboard. You can access your PC Builder below.</p>
-    <a class="link-offset-2 link-underline link-underline-opacity-0 fs-4 fw-bold" href="/">Go to Builder</a>
+    <a class="link-offset-2 link-underline link-underline-opacity-0 fs-4 fw-bold" href="/build">Go to Builder</a>
     <div class="mt-4" id="history">
 
     </div>
 </main>
 
-<%- include('templates/footer'); %>
+<%- include('./templates/footer'); %>
 </body>
 </html>
