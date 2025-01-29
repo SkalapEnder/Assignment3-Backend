@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple PC Builder</title>
+    <title>GPU Select</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .search-container {
@@ -18,10 +18,10 @@
 <body>
 <%- include('../templates/navbar'); %>
 <div class="container bg-white shadow rounded mt-4 p-5 pb-4">
-    <h1 class="text-center mb-4">PC Builder</h1>
+    <h1 class="text-center mb-4">GPU select</h1>
     <div class="d-flex justify-content-evenly">
         <!-- GPU part -->
-        <div class="w-100 mx-3">
+        <div class="w-50 mx-3">
             <div>
                 <div class="mb-3">
                     <label for="gpu-input" class="form-label">Enter GPU Name:</label>
@@ -48,31 +48,32 @@
             </div>
         </div>
 
-        <!-- CPU Part -->
-        <div class="w-100 mx-3">
-            <div>
-                <div class="mb-3">
-                    <label for="cpu-input" class="form-label">Enter CPU Name:</label>
-                    <input type="text" id="cpu-input" class="form-control" placeholder="Type a CPU name (e.g., Intel Core i5 6400)" />
-                </div>
-
-                <div id="cpu-options-container" class="mt-3">
-                    <label for="cpu-select" class="form-label">Select a CPU:</label>
-                    <select id="cpu-select" class="form-select">
-                        <option value="">Start typing above to load CPUs...</option>
-                    </select>
-                </div>
-            </div>
-
-            <div id="cpu-details" class="mt-4">
-                <h4>CPU Details:</h4>
-                <p><strong>Model:</strong> <span id="cpu-model">N/A</span></p>
-                <p><strong>Vendor:</strong> <span id="cpu-vendor">N/A</span></p>
-                <p><strong>Number of cores:</strong> <span id="cpu-cores">N/A</span></p>
-                <p><strong>Number of threads:</strong> <span id="cpu-threads">N/A</span></p>
-                <p><strong>Clock rate:</strong> <span id="cpu-clock-rate">N/A</span></p>
-                <p><strong>Bus Interface:</strong> <span id="cpu-bus-interface">N/A</span></p>
-                <p><strong>TDP (Watts):</strong> <span id="cpu-tdp">N/A</span></p>
+        <div id="search-amazon" class="row">
+            <h3>Search in Amazon</h3>
+            <div class="overflow-auto">
+                <% if (products.length > 0) { %>
+                    <% products.forEach(product => { %>
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <img src="<%= product.product_photo %>" class="card-img-top" alt="<%= product.product_title %>">
+                                <div class="card-body">
+                                    <h5 class="card-title"><%= product.product_title %></h5>
+                                    <p class="card-text">Price: <%= product.product_price %></p>
+                                    <p class="card-text">Rating: <%= product.product_star_rating %> (<%= product.product_num_ratings%>)</p>
+                                </div>
+                                <div class="card-footer">
+                                    <form action="/add-gpu>" method="POST">
+                                        <button type="submit" class="btn btn-primary">Add to Favorite</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-12">
+                        <p>No products found.</p>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div>
@@ -152,54 +153,6 @@
             Object.values(gpuDetails).forEach(detail => (detail.textContent = 'N/A'));
         }
     });
-
-    document.getElementById('cpu-input').addEventListener('input', function () {
-        const cpuInput = this.value;
-        if (cpuInput.length > 0) {
-            // Fetch CPUs based on user input
-            fetch(`/api/cpus?name=${cpuInput}`)
-                .then(response => response.json())
-                .then(data => {
-                    const cpuSelect = document.getElementById('cpu-select');
-                    cpuSelect.innerHTML = ''; // Clear previous options
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = '';
-                    defaultOption.textContent = 'Select a CPU';
-                    cpuSelect.appendChild(defaultOption);
-
-                    data.forEach(cpu => {
-                        const option = document.createElement('option');
-                        option.value = cpu.model; // Use CPU model as the value
-                        option.textContent = cpu.model;
-                        cpuSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error fetching CPU data:', error));
-        }
-    });
-
-    document.getElementById('cpu-select').addEventListener('change', function () {
-        const selectedCpuModel = this.value;
-        if (selectedCpuModel) {
-            fetch(`/api/cpus?name=${selectedCpuModel}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Assuming the data returned contains the detailed CPU information
-                    const cpuDetails = data.find(cpu => cpu.model === selectedCpuModel);
-                    if (cpuDetails) {
-                        document.getElementById('cpu-model').textContent = cpuDetails.model || 'N/A';
-                        document.getElementById('cpu-vendor').textContent = cpuDetails.vendor || 'N/A';
-                        document.getElementById('cpu-cores').textContent = cpuDetails.cores || 'N/A';
-                        document.getElementById('cpu-threads').textContent = cpuDetails.threads || 'N/A';
-                        document.getElementById('cpu-clock-rate').textContent = cpuDetails.clockRate || 'N/A';
-                        document.getElementById('cpu-bus-interface').textContent = cpuDetails.busInterface || 'N/A';
-                        document.getElementById('cpu-tdp').textContent = cpuDetails.tdp || 'N/A';
-                    }
-                })
-                .catch(error => console.error('Error fetching CPU details:', error));
-        }
-    });
-
 </script>
 </body>
 </html>

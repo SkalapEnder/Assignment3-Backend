@@ -1,7 +1,8 @@
 const express = require('express');
-const User = require('../models/User');
 const mongoose = require("mongoose");
 const router = express.Router();
+
+const User = require('../models/User');
 
 const NewsAPI = require('newsapi');
 const newsapi = new NewsAPI('b2486c9f9e994497847a79e02ac4a8f8');
@@ -52,6 +53,17 @@ router.get('/news', async (req, res) => {
         // Render the page with an empty articles array in case of an error
         res.render('tasks/news', { articles: [] });
     }
+});
+
+router.post('/add-news', async (req, res) => {
+    const { userId, newsLink } = req.body;
+    const user = await User.findOne({user_id: userId});
+    if (user === null) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+    user.news.push(newsLink);
+    await user.save();
+    res.redirect('tasks/news');
 });
 
 module.exports = router;
