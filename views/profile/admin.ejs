@@ -38,11 +38,13 @@
                 <td><%= user.role %></td>
                 <td><%= convertData(user.createdAt) %></td>
                 <td>
-                    <form action="/admin/delete-account/<%= user.user_id %>" method="POST" class="d-inline" <%= user.user_id === userId ? 'disabled' : '' %>>
-                        <button type="submit" class="btn btn-warning btn-sm fs-5">Update</button>
+                    <form action="/update/<%= user.user_id %>" method="GET" class="d-inline">
+                        <button type="submit" class="btn btn-warning btn-sm fs-5"
+                                <%= user.user_id === userId ? 'disabled' : '' %>>Update</button>
                     </form>
-                    <form action="/admin/delete-account/<%= user.user_id %>" method="POST" class="d-inline" <%= user.user_id === userId ? 'disabled' : '' %>>
-                        <button type="submit" class="btn btn-outline-danger btn-sm fs-5">Delete</button>
+                    <form action="/delete-account/<%= user.user_id %>" method="GET" class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger btn-sm fs-5"
+                                <%= user.user_id === userId ? 'disabled' : '' %>>Delete</button>
                     </form>
                 </td>
             </tr>
@@ -52,8 +54,8 @@
 </div>
 
 <!-- Add User Form -->
-<div class="container w-50 mt-5 p-5 bg-white shadow rounded text-center">
-    <form action="/register" method="POST" class="mt-3 ">
+<div class="container w-50 my-4 p-5 bg-white shadow rounded text-center">
+    <form action="/register/admin" method="POST" class="mt-3 ">
         <h3>Add New User</h3>
         <div class="form-floating w-50  mx-auto">
             <input type="text" class="form-control my-3" id="username" name="username">
@@ -97,6 +99,8 @@
     }
 </script>
 
-<%- include('../templates/footer'); %>
+<div class="py-2 text-center fs-5 text-white bg-dark">
+    <h4>Alisher Berik | IT-2308</h4>
+</div>
 </body>
 </html>

@@ -15,14 +15,10 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     email: { type: String, required: true},
     role: { type: String, enum: ['admin', 'user'], required: true },
-    news: {
-        type: [String],
-        default: []
-    },
-    gpus: {
-        type: [String],
-        default: []
-    },
+
+    news_group_id: { type: Number, required: true },
+    gpu_group_id: { type: Number, required: true },
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     deletedAt: { type: Date, default: null },

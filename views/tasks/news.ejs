@@ -14,13 +14,16 @@
             height: 15vw;
             object-fit: cover;
         }
+        #news-favorites{
+            overflow-x: auto;
+        }
     </style>
 </head>
 <body>
 <%- include('../templates/navbar'); %>
 
 <div class="container mt-5 p-5 w-lg-75 bg-white shadow rounded">
-    <h1 class="mb-4 text-center">News Page</h1>
+    <h1 class="mb-4 text-center">News of 2 Days Page</h1>
 
     <div id="news-articles">
         <% if (articles.length > 0) { %>
@@ -28,24 +31,55 @@
                 <% articles.forEach(article => { %>
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card h-100">
-                            <img src="<%= article.urlToImage || 'https://via.placeholder.com/150' %>" class="card-img-top" alt="News Image">
+                            <img src="<%= article.urlToImage && article.urlToImage.trim().startsWith('http') ? article.urlToImage : 'https://placehold.co/400' %>" class="card-img-top" alt="News Image">
                             <div class="card-body">
                                 <h5 class="card-title"><%= article.title %></h5>
+                                <p class="card-text text-muted"><em><%= article.author %> | <%= convertData(article.publishedAt) %></em></p>
                                 <p class="card-text"><%= article.description || 'No description available.' %></p>
+
                             </div>
                             <div class="card-footer d-flex justify-content-around">
                                 <a href="<%= article.url %>" target="_blank" class="btn btn-outline-primary">Read More</a>
-<!--                                <form action="/news/fav/<%= article.url %>" method="POST">-->
-<!--                                    <button type="submit" class="btn btn-outline-secondary">Add to favorite</button>-->
-<!--                                </form>-->
+                                <form action="/add-news" method="POST">
+                                    <input type="hidden" name="newsLink" value="<%= article.url %>">
+                                    <button type="submit" class="btn btn-outline-secondary">Add to Favorite</button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 <% }); %>
             </div>
+
+            <!-- Pagination Controls -->
+            <nav>
+                <ul class="pagination justify-content-center mt-4">
+                    <% if (currentPage > 1) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= currentPage - 1 %>">Previous</a>
+                        </li>
+                    <% } %>
+
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                        </li>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= currentPage + 1 %>">Next</a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+
         <% } else { %>
             <p class="text-center">No news articles available. Please try again later.</p>
         <% } %>
+    </div>
+
+    <div id="news-favorites">
+
     </div>
 </div>
 

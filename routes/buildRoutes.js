@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require("mongoose");
 const axios = require('axios');
 const router = express.Router();
-
+const GPU = require('../models/GPU');
 const User = require('../models/User');
 
 mongoose.connect('mongodb+srv://skalap2endra:kGOM7z5V54vBFdp1@cluster0.vannl.mongodb.net/assignment3?retryWrites=true&w=majority&appName=Cluster0')
@@ -50,10 +50,8 @@ router.get('/api/search/:gpu', async (req, res) => {
             query: gpuName,
             page: '1',
             country: 'US',
-            sort_by: 'RELEVANCE',
-            product_condition: 'ALL',
-            is_prime: 'false',
-            deals_and_discounts: 'NONE'
+            sort_by: 'REVIEWS',
+            product_condition: 'NEW',
         },
         headers: {
             'x-rapidapi-key': '6c6625f883msh2274802339f753fp17f542jsnbd5531f0fdc3',
@@ -63,7 +61,8 @@ router.get('/api/search/:gpu', async (req, res) => {
 
     try {
         const response = await axios.request(options);
-        const products = response.parameters.data.products;
+        const products = response.data.data.products;
+        //console.log(products);
         res.json({ products: products });
     } catch (error) {
         console.error(error);

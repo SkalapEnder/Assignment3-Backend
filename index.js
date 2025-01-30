@@ -56,7 +56,7 @@ function convertData(timestamp) {
     const month = date.toLocaleString('en-GB', { month: 'long' });
     const year = date.getFullYear();
 
-    return `${time}, ${day} ${month}, ${year}`;
+    return `${time} ${day} ${month}, ${year}`;
 }
 
 function capitalizeFirstLetter(string) {
