@@ -1,7 +1,5 @@
 const express = require('express');
 const User = require('../models/User');
-const News = require('../models/News');
-const GPU = require('../models/GPU');
 const mongoose = require("mongoose");
 const router = express.Router();
 const adminCode = 'admin1243'
@@ -10,7 +8,7 @@ mongoose.connect('mongodb+srv://skalap2endra:kGOM7z5V54vBFdp1@cluster0.vannl.mon
     .then(() => console.log('Auth: Connected to MongoDB Atlas'))
     .catch((err) => console.error('Error connecting to MongoDB Atlas:', err));
 
-// REGISTER
+// REGISTER part
 router.get('/register', (req, res) => res.render('auth/registration', {role: 'user'}));
 
 router.post('/register', async (req, res) => {
@@ -27,25 +25,9 @@ router.post('/register', async (req, res) => {
 
     // Find new free ID from collection (starts from 0)
     const userId = await getNextFreeUserId();
-    const newsID = await getNextFreeNewsModelId();
-    const gpuID = await getNextFreeGPUsModelId();
-    if (isNaN(userId) || isNaN(newsID) || isNaN(gpuID)) {
+    if (isNaN(userId)) {
         throw new Error('Failed to generate a valid user_id');
     }
-
-    const newNews = new News({
-        model_id: newsID,
-        history: [],
-        favorites: [],
-    });
-    const savedNews = await newNews.save();
-
-    const newGPU = new GPU({
-        model_id: gpuID,
-        history: [],
-        favorites: [],
-    });
-    const savedGPU = await newGPU.save();
 
     const newUser = new User({
         user_id: userId,
@@ -53,8 +35,8 @@ router.post('/register', async (req, res) => {
         email: email,
         password: password,
         role: role,
-        news_group_id: savedNews.model_id,
-        gpu_group_id: savedGPU.model_id,
+        history_news: [],
+        history_gpus: [],
         created_at: new Date(),
         updated_at: new Date(),
     });
@@ -77,25 +59,9 @@ router.post('/register/admin', async (req, res) => {
 
     // Find new free ID from collection (starts from 0)
     const userId = await getNextFreeUserId();
-    const newsID = await getNextFreeNewsModelId();
-    const gpuID = await getNextFreeGPUsModelId();
-    if (isNaN(userId) || isNaN(newsID) || isNaN(gpuID)) {
+    if (isNaN(userId)) {
         throw new Error('Failed to generate a valid user_id');
     }
-
-    const newNews = new News({
-        model_id: newsID,
-        history: [],
-        favorites: [],
-    });
-    const savedNews = await newNews.save();
-
-    const newGPU = new GPU({
-        model_id: gpuID,
-        history: [],
-        favorites: [],
-    });
-    const savedGPU = await newGPU.save();
 
     const newUser = new User({
         user_id: userId,
@@ -103,8 +69,8 @@ router.post('/register/admin', async (req, res) => {
         email: email,
         password: password,
         role: role,
-        news_group_id: savedNews.model_id,
-        gpu_group_id: savedGPU.model_id,
+        history_news: [],
+        history_gpus: [],
         created_at: new Date(),
         updated_at: new Date(),
     });
@@ -113,8 +79,7 @@ router.post('/register/admin', async (req, res) => {
     res.redirect('/admin');
 });
 
-
-// LOGIN
+// LOGIN part
 router.get('/login', (req, res) => {
     if (req.session.userId !== undefined) {
         return res.redirect('/');
@@ -201,7 +166,7 @@ router.post('/update', async (req, res) => {
     }
 });
 
-// ADMIN part
+// USER part
 router.get('/admin', async (req, res) => {
     if (req.session.userId === undefined) {
         return res.redirect('/login');
@@ -209,6 +174,18 @@ router.get('/admin', async (req, res) => {
 
     const users = await User.find({});
     res.render('profile/admin', {users});
+})
+
+router.get('/profile', async (req, res) => {
+    if (req.session.userId === undefined) {
+        return res.redirect('/login');
+    }
+
+    const user = await getUser(req.session.userId);
+    if (user === null) {
+        return res.render('templates/error', {errorMessage: 'User not found'});
+    }
+    return res.render('profile/profile', {user});
 })
 
 // LOG OUT part
@@ -260,18 +237,7 @@ router.get('/delete-account/:id', async (req, res) => {
     }
 });
 
-router.get('/profile', async (req, res) => {
-    if (req.session.userId === undefined) {
-        return res.redirect('/login');
-    }
-
-    const user = await getUser(req.session.userId);
-    if (user === null) {
-        return res.render('templates/error', {errorMessage: 'User not found'});
-    }
-    return res.render('profile/profile', {user});
-})
-
+// Helpers
 async function getUser(id){
     const user = await User.findOne({ user_id: id });
     if (user === null) return null;
@@ -288,34 +254,6 @@ async function getNextFreeUserId() {
     } catch (err) {
         console.error('Error retrieving next free user_id:', err.message);
         throw new Error('Failed to retrieve next free user ID');
-    }
-}
-
-async function getNextFreeNewsModelId() {
-    try {
-        const lastNews = await News.findOne().sort({ model_id: -1 });
-        if (lastNews === null) {
-            return 0;
-        }
-
-        return parseInt(lastNews.model_id) + 1;
-    } catch (err) {
-        console.error('Error retrieving next free model_id for News:', err.message);
-        throw new Error('Failed to retrieve next free model_id for News');
-    }
-}
-
-async function getNextFreeGPUsModelId() {
-    try {
-        const lastGPU = await GPU.findOne().sort({ model_id: -1 });
-        if (lastGPU === null) {
-            return 0;
-        }
-
-        return parseInt(lastGPU.model_id) + 1;
-    } catch (err) {
-        console.error('Error retrieving next free model_id for GPU:', err.message);
-        throw new Error('Failed to retrieve next free model_id for GPU');
     }
 }
 

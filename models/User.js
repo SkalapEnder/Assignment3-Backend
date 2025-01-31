@@ -16,8 +16,18 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true},
     role: { type: String, enum: ['admin', 'user'], required: true },
 
-    news_group_id: { type: Number, required: true },
-    gpu_group_id: { type: Number, required: true },
+    favorite_news: {
+        type: [{
+            title: String,
+            url: String,
+            urlToImage: String,
+            author: String,
+            publishedAt: Date,
+            description: String,
+        }],
+        default: [],
+    },
+    history_gpus: { type: [String], default: [] },
 
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

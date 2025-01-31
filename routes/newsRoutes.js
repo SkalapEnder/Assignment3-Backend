@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const router = express.Router();
 const apiKey = '9656e146df53439e85473528e1af6e21'
 const User = require('../models/User');
-const News = require('../models/News');
 
 let articles = [];
 let lastUpdate = new Date();
@@ -23,7 +22,7 @@ router.get('/news', async (req, res) => {
 
     const queries = ['GPU', 'AMD', 'NVIDIA', 'RTX', 'PC'];
 
-    try{
+    try {
         // If array is empty or 1-2 days was passed
         if (articles.length === 0 || isMidnightPassed()) {
             articles = await updateArticles(queries, apiKey);
@@ -32,32 +31,73 @@ router.get('/news', async (req, res) => {
         const paginatedArticles = articles.slice(startIndex, endIndex);
         const totalPages = Math.max(Math.ceil(articles.length / pageSize), 1);
 
-        res.render('tasks/news', { articles: paginatedArticles,
+        // Fetch the user's favorite news
+        const user = await User.findOne({ user_id: req.session.userId });
+        const favoriteNews = user ? user.favorite_news : [];
+
+        res.render('tasks/news', {
+            articles: paginatedArticles,
+            favoriteNews: favoriteNews,
             currentPage: page,
-            totalPages: totalPages, });
-    }  catch (error) {
+            totalPages: totalPages,
+        });
+    } catch (error) {
         console.error("Error fetching news:", error);
-        res.render("tasks/news", { articles: [], currentPage: 1, totalPages: 1 });
+        res.render("tasks/news", {
+            articles: [],
+            favoriteNews: [],
+            currentPage: 1,
+            totalPages: 1,
+        });
     }
 });
 
-router.post('/add-news/fav', async (req, res) => {
-    const { newsLink } = req.body;
-    const userId = req.session.userId;
-    const user = await User.findOne({user_id: userId});
-    if (user === null) {
-        return res.render('templates/error', { errorMessage: 'User not found' });
-    }
+router.post('/add-news', async (req, res) => {
+    if (req.session.userId === undefined) return res.redirect('/login');
 
-    const modelId = user.news_group_id;
-    const newsGroup = await News.findOne({model_id: modelId})
-    if (newsGroup === null) {
-        return res.render('templates/error', { errorMessage: 'News block is not found' });
-    }
+    try {
+        const newsData = JSON.parse(req.body.newsData); // Parse the JSON string
+        const user = await User.findOne({ user_id: req.session.userId });
 
-    newsGroup.favorites.addToSet(newsLink);
-    await newsGroup.save();
-    res.redirect('tasks/news');
+        if (user) {
+            const isAlreadyFavorite = user.favorite_news.some(
+                (article) => article.url === newsData.url
+            );
+
+            if (!isAlreadyFavorite) {
+                user.favorite_news.push(newsData); // Add the news to favorites
+                await user.save();
+                res.redirect('/news');
+            } else {
+                return res.redirect('/news');
+            }
+        } else {
+            return res.render('templates/error', {errorMessage: 'User not found.' });
+        }
+    } catch (error) {
+        console.error('Error adding news to favorites:', error);
+        return res.render('templates/error', {errorMessage: 'Internal server error.' });
+    }
+});
+
+router.post('/remove-favorite-news', async (req, res) => {
+    try {
+        const { newsLink } = req.body; // Get the news URL to remove
+        const user = await User.findOne({ user_id: req.session.userId });
+
+        if (user) {
+            user.favorite_news = user.favorite_news.filter(
+                (article) => article.url !== newsLink
+            );
+            await user.save();
+            res.redirect('/news');
+        } else {
+            return res.render('templates/error', {errorMessage: 'User not found.' });
+        }
+    } catch (error) {
+        console.error('Error removing news from favorites:', error);
+        return res.render('templates/error', {errorMessage: 'Internal server error.' });
+    }
 });
 
 module.exports = router;
@@ -103,7 +143,6 @@ async function fetchAndFilterArticles(queries, from, to, apiKey) {
 
     return fetchedArticles;
 }
-
 
 function isMidnightPassed() {
     if (lastUpdate === null) return true;
