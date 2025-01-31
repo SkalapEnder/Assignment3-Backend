@@ -141,7 +141,15 @@ async function fetchAndFilterArticles(queries, from, to, apiKey) {
         }
     }
 
-    return fetchedArticles;
+    return sortArticlesByDate(fetchedArticles);
+}
+
+function sortArticlesByDate(articles) {
+    return articles.sort((a, b) => {
+        const dateA = new Date(a.publishedAt);
+        const dateB = new Date(b.publishedAt);
+        return dateB - dateA; // Sort from newest to oldest
+    });
 }
 
 function isMidnightPassed() {

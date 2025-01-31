@@ -106,33 +106,53 @@ router.get('/api/gpus/:gpu', async (req, res) => {
     }
 });
 
-router.post('/add-gpu', async (req, res) => {
+router.post('/api/add-recent-gpu', async (req, res) => {
+    const search = req.body.search;
+    const userId = req.session.userId;
+    const apiUrl = 'https://raw.githubusercontent.com/voidful/gpu-info-api/gpu-data/gpu.json';
+
     try {
-        const gpu = req.body;
-        const userId = req.session.userId;
-        const user = await User.findOne({user_id: userId});
+        // Fetch GPU data from the API
+        const response = await axios.get(apiUrl);
+        const allGPUs = response.data;
+
+        // Find the matching GPU
+        let matchingGPU = null;
+        for (const [key, value] of Object.entries(allGPUs)) {
+            if (value.Model.toLowerCase().includes(search.toLowerCase())) {
+                matchingGPU = { identifier: key, ...value };
+                break;
+            }
+        }
+
+        if (matchingGPU === null) {
+            return res.status(404).json({ error: 'No matching GPU found' });
+        }
+
+        const user = await User.findOne({ user_id: userId });
         if (user === null) {
-            return res.render('templates/error', {errorMessage: 'User not found'});
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        const newsGroup = user.history_gpus;
-        if (newsGroup.length > 4) {
-            newsGroup.pop()
-        }
-        const update = {
-            $push: {
-                history_gpus: {
-                    $each: [gpu.Model],
-                    $position: 0,
-                },
-            },
-        };
+        const isAlreadyAdded = user.history_gpus.some(
+            (gpu) => gpu.identifier === matchingGPU.identifier
+        );
 
-        const result = await User.findOneAndUpdate({user_id: userId}, update)
-        console.log(`${result.modifiedCount} document updated`);
-        res.redirect('tasks/build');
+        if (!isAlreadyAdded) {
+            // Add the GPU to the beginning of the history_gpus array
+            user.history_gpus.unshift(matchingGPU);
+
+            if (user.history_gpus.length > 5) {
+                user.history_gpus.pop();
+            }
+
+            await user.save();
+        }
+
+        res.json({ success: true});
     } catch (error) {
         console.error(error);
+        res.status(500).json({ error: 'Failed to fetch GPU data or update user history' });
     }
 });
 

@@ -236,31 +236,17 @@
             return;
         }
 
-
         try {
-            const resp = await fetch(`/api/gpus/${encodeURIComponent(searchQuery)}`);
-            const dataGpu = await resp.json();
-
-            const respon = await fetch('/add-gpu', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataGpu),
-            });
-
-            if (!respon.ok) {
-                console.error('Failed to add GPU to recent history.');
-            }
+            const response = await fetch(`/api/search/${encodeURIComponent(searchQuery)}`);
+            const datas = await response.json();
+            const data = datas.products;
+            const dataGpu = data[0];
 
             gpuSelect.value = dataGpu.Model;
             gpuSelect.textContent = `${dataGpu.Model} - ${dataGpu.identifier}`;
 
-            addDetailsGpu(dataGpu);
+            addDetailsGpu(JSON.stringify(dataGpu));
 
-            const response = await fetch(`/api/search/${encodeURIComponent(searchQuery)}`);
-            const datas = await response.json();
-            const data = datas.products;
             const resultsContainer = document.getElementById('search-amazon');
             resultsContainer.innerHTML = '';
 
@@ -294,11 +280,23 @@
                 resultsContainer.innerHTML = '<div class="col-12"><p>No products found.</p></div>';
             }
 
-        } catch (error) {}
+        } catch (error) {
+            alert(error)
+        }
     });
 
-    async function addRecentGpu(gpuDetails) {
+    async function addRecentGpu(searchQuery) {
+        const response = await fetch('/api/add-recent-gpu', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({search: searchQuery}),
+        });
 
+        if (!response.ok) {
+            alert('Failed to add GPU to recent history.');
+        }
     }
 
     function addDetailsGpu(gpu) {
