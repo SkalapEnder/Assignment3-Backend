@@ -16,10 +16,10 @@ router.get('/build', async (req, res) => {
     try {
         const user = await User.findOne({ user_id: req.session.userId });
         const products_recent = user ? user.history_gpus : [];
-
+        console.log(products_recent)
         res.render('tasks/build', {
             products: [],
-            products_recent: products_recent,
+            products_recent: JSON.parse(products_recent),
         });
     } catch (error) {
         console.error('Error fetching recently viewed GPUs:', error);
@@ -107,19 +107,18 @@ router.get('/api/gpus/:gpu', async (req, res) => {
 });
 
 router.post('/api/add-recent-gpu', async (req, res) => {
-    const search = req.body.search;
+    const { searchQuery } = req.body;
     const userId = req.session.userId;
     const apiUrl = 'https://raw.githubusercontent.com/voidful/gpu-info-api/gpu-data/gpu.json';
 
     try {
-        // Fetch GPU data from the API
         const response = await axios.get(apiUrl);
         const allGPUs = response.data;
 
         // Find the matching GPU
         let matchingGPU = null;
         for (const [key, value] of Object.entries(allGPUs)) {
-            if (value.Model.toLowerCase().includes(search.toLowerCase())) {
+            if (value.Model.toLowerCase().includes(searchQuery.toLowerCase())) {
                 matchingGPU = { identifier: key, ...value };
                 break;
             }
@@ -133,29 +132,20 @@ router.post('/api/add-recent-gpu', async (req, res) => {
         if (user === null) {
             return res.status(404).json({ error: 'User not found' });
         }
+        console.log(matchingGPU)
 
-        const isAlreadyAdded = user.history_gpus.some(
-            (gpu) => gpu.identifier === matchingGPU.identifier
-        );
+        user.history_gpus.unshift(JSON.stringify(matchingGPU));
 
-        if (!isAlreadyAdded) {
-            // Add the GPU to the beginning of the history_gpus array
-            user.history_gpus.unshift(matchingGPU);
-
-            if (user.history_gpus.length > 5) {
-                user.history_gpus.pop();
-            }
-
-            await user.save();
+        if (user.history_gpus.length > 5) {
+            user.history_gpus.pop();
         }
 
+        await user.save();
         res.json({ success: true});
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch GPU data or update user history' });
     }
 });
-
-
 
 module.exports = router;

@@ -31,28 +31,27 @@
 <div class="container bg-white shadow rounded my-3 p-5 pb-4">
     <h1 class="text-center mb-4">GPU select</h1>
 
-    <div id="gpus-recent" class="mb-4">
-        <h3>Recent GPUs</h3>
-        <div class="d-flex overflow-auto">
-            <% if (products_recent && products_recent.length > 0) { %>
-                <% products_recent.forEach(product => { %>
-                    <div class="col-md-4 col-lg-3 mb-4">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><%= product.Model %></h5>
-                            </div>
-                            <div class="card-footer d-flex justify-content-around">
-                                <input type="hidden" class="recent-gpu" id="<%= product.identifier %>" value="<%= product.identifier %>">
-                                <button class="btn btn-outline-primary" id="gpu-find-recent">Find</button>
-                            </div>
-                        </div>
-                    </div>
-                <% }); %>
-            <% } else { %>
-                <p>No recently viewed GPUs.</p>
-            <% } %>
-        </div>
-    </div>
+<!--    <div id="gpus-recent" class="mb-4">-->
+<!--        <h3>Recent GPUs</h3>-->
+<!--        <div class="d-flex overflow-auto">-->
+<!--            <% if (products_recent.length > 0) { %>-->
+<!--                <% products_recent.forEach(product => { %>-->
+<!--                    <div class="col-md-4 col-lg-3 mb-4">-->
+<!--                        <div class="card h-100">-->
+<!--                            <div class="card-body">-->
+<!--                                <h5 class="card-title"><%= product.Model %></h5>-->
+<!--                            </div>-->
+<!--                            <div class="card-footer d-flex justify-content-around">-->
+<!--                                <button class="btn btn-outline-primary" id="gpu-find-recent">Find</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                <% }); %>-->
+<!--            <% } else { %>-->
+<!--                <p class="p-3">No recently viewed GPUs.</p>-->
+<!--            <% } %>-->
+<!--        </div>-->
+<!--    </div>-->
 
     <div class="d-flex justify-content-around ">
         <!-- GPU part -->
@@ -99,7 +98,7 @@
     const gpuInput = document.getElementById('gpu-input');
     const gpuSelect = document.getElementById('gpu-select');
     const searchButton = document.getElementById('searchButton');
-    const gpuRecentButton = document.getElementById('gpu-find-recent');
+    //const gpuRecentButton = document.getElementById('gpu-find-recent');
     const gpuDetails = {
         model: document.getElementById('gpu-model'),
         vendor: document.getElementById('gpu-vendor'),
@@ -154,7 +153,6 @@
         const gpuDetailsData = selectedOption.dataset.details ? JSON.parse(selectedOption.dataset.details) : null;
 
         if (gpuDetailsData) {
-            console.log(gpuDetailsData);
             gpuDetails.model.textContent = gpuDetailsData.Model || 'N/A';
             gpuDetails.vendor.textContent = gpuDetailsData.Vendor || 'N/A';
             gpuDetails.identifier.textContent = gpuDetailsData.identifier || 'N/A';
@@ -184,7 +182,7 @@
             return;
         }
 
-        await addRecentGpu(searchQuery);
+        //const ress = await addRecentGpu(searchQuery);
 
         try {
             const response = await fetch(`/api/search/${encodeURIComponent(searchQuery)}`);
@@ -210,9 +208,9 @@
                                 </div>
                                 <div class="card-footer d-flex justify-content-between">
                                     <a href="${product.product_url}" target="_blank" class="btn btn-secondary">Read More</a>
-                                    <form action="/add-gpu" method="POST">
-                                        <button type="submit" class="btn btn-primary">Add to Favorite</button>
-                                    </form>
+<!--                                    <form action="/add-gpu" method="POST">-->
+<!--                                        <button type="submit" class="btn btn-primary">Add to Favorite</button>-->
+<!--                                    </form>-->
                                 </div>
                             </div>
                         </div>
@@ -227,76 +225,77 @@
             alert('Failed to fetch search results. Please try again.');
         }
     });
-
-    gpuRecentButton.addEventListener('click', async () => {
-        const searchQuery = gpuSelect.value;
-
-        if (searchQuery === null || searchQuery === '') {
-            alert('Please enter a search term.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/search/${encodeURIComponent(searchQuery)}`);
-            const datas = await response.json();
-            const data = datas.products;
-            const dataGpu = data[0];
-
-            gpuSelect.value = dataGpu.Model;
-            gpuSelect.textContent = `${dataGpu.Model} - ${dataGpu.identifier}`;
-
-            addDetailsGpu(JSON.stringify(dataGpu));
-
-            const resultsContainer = document.getElementById('search-amazon');
-            resultsContainer.innerHTML = '';
-
-            if (data && data.length > 0) {
-                data.forEach(product => {
-                    if(product.product_price === null) return;
-                    const productCard = `
-                        <div class="col-md-6 col-lg-4 mb-4">
-                            <div class="card">
-                                <img src="${product.product_photo}" class="card-img-top" alt="${product.product_title}">
-                                <div class="card-body">
-                                    <h5 class="card-title">${product.product_title}</h5>
-                                    <hr>
-                                    <div class="d-flex justify-content-between">
-                                        <h5 class="card-text">Price: ${product.product_price}</h5>
-                                        <p class="card-text">Rating: ${product.product_star_rating} (${product.product_num_ratings})</p>
-                                    </div>
-                                </div>
-                                <div class="card-footer d-flex justify-content-between">
-                                    <a href="${product.product_url}" target="_blank" class="btn btn-secondary">Read More</a>
-                                    <form action="/add-gpu" method="POST">
-                                        <button type="submit" class="btn btn-primary">Add to Favorite</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    resultsContainer.innerHTML += productCard;
-                });
-            } else {
-                resultsContainer.innerHTML = '<div class="col-12"><p>No products found.</p></div>';
-            }
-
-        } catch (error) {
-            alert(error)
-        }
-    });
+    //
+    // gpuRecentButton.addEventListener('click', async () => {
+    //     const searchQuery = gpuSelect.value;
+    //
+    //     if (searchQuery === null || searchQuery === '') {
+    //         alert('Please enter a search term.');
+    //         return;
+    //     }
+    //
+    //     try {
+    //         const response = await fetch(`/api/search/${encodeURIComponent(searchQuery)}`);
+    //         const datas = await response.json();
+    //         const data = datas.products;
+    //         const dataGpu = data[0];
+    //
+    //         gpuSelect.value = dataGpu.Model;
+    //         gpuSelect.textContent = `${dataGpu.Model} - ${dataGpu.identifier}`;
+    //
+    //         addDetailsGpu(JSON.stringify(dataGpu));
+    //
+    //         const resultsContainer = document.getElementById('search-amazon');
+    //         resultsContainer.innerHTML = '';
+    //
+    //         if (data.length > 0) {
+    //             data.forEach(product => {
+    //                 if(product.product_price === null) return;
+    //                 const productCard = `
+    //                     <div class="col-md-6 col-lg-4 mb-4">
+    //                         <div class="card">
+    //                             <img src="${product.product_photo}" class="card-img-top" alt="${product.product_title}">
+    //                             <div class="card-body">
+    //                                 <h5 class="card-title">${product.product_title}</h5>
+    //                                 <hr>
+    //                                 <div class="d-flex justify-content-between">
+    //                                     <h5 class="card-text">Price: ${product.product_price}</h5>
+    //                                     <p class="card-text">Rating: ${product.product_star_rating} (${product.product_num_ratings})</p>
+    //                                 </div>
+    //                             </div>
+    //                             <div class="card-footer d-flex justify-content-between">
+    //                                 <a href="${product.product_url}" target="_blank" class="btn btn-secondary">Read More</a>
+    //                                 <form action="/add-gpu" method="POST">
+    //                                     <button type="submit" class="btn btn-primary">Add to Favorite</button>
+    //                                 </form>
+    //                             </div>
+    //                         </div>
+    //                     </div>
+    //                 `;
+    //                 resultsContainer.innerHTML += productCard;
+    //             });
+    //         } else {
+    //             resultsContainer.innerHTML = '<div class="col-12"><p>No products found.</p></div>';
+    //         }
+    //
+    //     } catch (error) {
+    //         alert(error)
+    //     }
+    // });
 
     async function addRecentGpu(searchQuery) {
         const response = await fetch('/api/add-recent-gpu', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({search: searchQuery}),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({searchQuery}),
         });
 
         if (!response.ok) {
             alert('Failed to add GPU to recent history.');
+            return false;
         }
+
+        return true;
     }
 
     function addDetailsGpu(gpu) {
